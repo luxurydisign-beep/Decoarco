@@ -6,35 +6,68 @@ import zipfile
 # تنظیمات صفحه
 st.set_page_config(page_title="ابزار جامع تصاویر", layout="wide")
 
-# ایجاد ۴ زبانه - حتماً چک کنید که ۴ نام در لیست زیر باشد
+# ایجاد ۴ زبانه
 tabs = st.tabs(["🖼️ لوگو", "📏 ابعاد ثابت", "📉 حجم و سایز", "🔄 تبدیل فرمت"])
 
-# --- زبانه ۱: لوگو ---
+# --- زبانه ۱: لوگو (با قابلیت انتخاب مکان) ---
 with tabs[0]:
     st.header("افزودن لوگو")
     up_m = st.file_uploader("عکس اصلی:", type=['jpg','png','jpeg'], accept_multiple_files=True, key="u1")
     up_l = st.file_uploader("لوگو:", type=['png','jpg'], key="u2")
+    
     if up_m and up_l:
-        sl_op = st.slider("شفافیت:", 0, 100, 100, key="s1")
-        sl_sz = st.slider("اندازه:", 1, 100, 20, key="s2")
+        col1, col2 = st.columns(2)
+        sl_op = col1.slider("شفافیت لوگو:", 0, 100, 100, key="s1")
+        sl_sz = col2.slider("اندازه لوگو (%):", 1, 100, 20, key="s2")
+        
+        # گزینه انتخاب مکان لوگو
+        pos_choice = st.radio(
+            "مکان قرارگیری لوگو:",
+            ["راست-پایین", "چپ-پایین", "راست-بالا", "چپ-بالا", "وسط"],
+            horizontal=True,
+            key="p1"
+        )
+
         if st.button("اجرای لوگو", key="b1"):
             z_buf = io.BytesIO()
             with zipfile.ZipFile(z_buf, "a", zipfile.ZIP_DEFLATED) as zf:
                 logo = Image.open(up_l).convert("RGBA")
                 for f in up_m:
                     img = Image.open(f).convert("RGBA")
+                    
+                    # محاسبه اندازه لوگو
                     lw = int(img.width * (sl_sz / 100))
                     lh = int(logo.height * (lw / logo.width))
                     lr = logo.resize((lw, lh), Image.Resampling.LANCZOS)
+                    
+                    # تنظیم شفافیت
                     if sl_op < 100:
                         r, g, b, a = lr.split()
                         a = a.point(lambda p: p * (sl_op / 100))
                         lr = Image.merge('RGBA', (r, g, b, a))
-                    img.paste(lr, (img.width - lw - 10, img.height - lh - 10), lr)
+                    
+                    # محاسبه مختصات بر اساس انتخاب کاربر
+                    padding = 10
+                    if pos_choice == "راست-پایین":
+                        coords = (img.width - lw - padding, img.height - lh - padding)
+                    elif pos_choice == "چپ-پایین":
+                        coords = (padding, img.height - lh - padding)
+                    elif pos_choice == "راست-بالا":
+                        coords = (img.width - lw - padding, padding)
+                    elif pos_choice == "چپ-بالا":
+                        coords = (padding, padding)
+                    else:  # وسط
+                        coords = ((img.width - lw) // 2, (img.height - lh) // 2)
+                    
+                    # چسباندن لوگو
+                    img.paste(lr, coords, lr)
+                    
                     buf = io.BytesIO()
                     img.convert("RGB").save(buf, format="JPEG", quality=90)
                     zf.writestr(f"logo_{f.name}", buf.getvalue())
-            st.download_button("📥 دانلود ZIP", z_buf.getvalue(), "logo.zip", key="d1")
+            
+            st.success("لوگو با موفقیت روی تمامی عکس‌ها قرار گرفت.")
+            st.download_button("📥 دانلود ZIP", z_buf.getvalue(), "logo_images.zip", key="d1")
 
 # --- زبانه ۲: ابعاد ثابت ---
 with tabs[1]:
