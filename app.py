@@ -6,8 +6,13 @@ import zipfile
 # تنظیمات کلی صفحه
 st.set_page_config(page_title="ویرایشگر همه‌کاره تصاویر", layout="wide")
 
-# ایجاد سه زبانه برای ابزارهای مختلف
-tab1, tab2, tab3 = st.tabs(["🖼️ افزودن لوگو", "📏 ابعاد ثابت (1024)", "📉 تغییر حجم و سایز دلخواه"])
+# ایجاد چهار زبانه برای ابزارهای مختلف
+tab1, tab2, tab3, tab4 = st.tabs([
+    "🖼️ افزودن لوگو", 
+    "📏 ابعاد ثابت (1024)", 
+    "📉 تغییر حجم و سایز", 
+    "🔄 تبدیل فرمت"
+])
 
 # ---------------------------------------------------------
 # زبانه اول: افزودن لوگو
@@ -42,7 +47,7 @@ with tab1:
             st.download_button("📥 دانلود ZIP", zip_buffer.getvalue(), "watermarked.zip")
 
 # ---------------------------------------------------------
-# زبانه دوم: ابعاد ثابت (درخواستی امروز)
+# زبانه دوم: ابعاد ثابت (1024)
 # ---------------------------------------------------------
 with tab2:
     st.header("تغییر سایز به ابعاد استاندارد")
@@ -61,18 +66,18 @@ with tab2:
                 buf = io.BytesIO()
                 resized.save(buf, format="JPEG", quality=90)
                 zf.writestr(f"resized_{f.name}", buf.getvalue())
+        st.success("تغییر ابعاد انجام شد.")
         st.download_button("📥 دانلود ZIP", zip_buffer.getvalue(), "resized.zip")
 
 # ---------------------------------------------------------
-# زبانه سوم: تغییر حجم و سایز دلخواه (برنامه قبلی)
+# زبانه سوم: تغییر حجم و سایز دلخواه
 # ---------------------------------------------------------
 with tab3:
     st.header("کاهش حجم و تغییر سایز دلخواه")
     opt_files = st.file_uploader("آپلود عکس‌ها:", type=['jpg', 'png', 'jpeg'], accept_multiple_files=True, key="fl3")
-    
     if opt_files:
         col_a, col_b = st.columns(2)
-        quality_val = col_a.slider("کیفیت (برای کاهش حجم):", 10, 100, 70, key="q3")
+        quality_val = col_a.slider("کیفیت (حجم کمتر = عدد کمتر):", 10, 100, 75, key="q3")
         scale_val = col_b.slider("مقیاس تصویر (درصد):", 10, 100, 100, key="sc3")
         
         if st.button("بهینه‌سازی حجم", key="btn3"):
@@ -80,13 +85,44 @@ with tab3:
             with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED) as zf:
                 for f in opt_files:
                     img = Image.open(f).convert("RGB")
-                    # محاسبه سایز بر اساس درصد
-                    nw = int(img.width * (scale_val / 100))
-                    nh = int(img.height * (scale_val / 100))
+                    nw, nh = int(img.width * (scale_val / 100)), int(img.height * (scale_val / 100))
                     img = img.resize((nw, nh), Image.Resampling.LANCZOS)
-                    
                     buf = io.BytesIO()
                     img.save(buf, format="JPEG", quality=quality_val)
                     zf.writestr(f"optimized_{f.name}", buf.getvalue())
-            st.success("بهینه‌سازی انجام شد!")
+            st.success("بهینه‌سازی تمام شد.")
             st.download_button("📥 دانلود ZIP", zip_buffer.getvalue(), "optimized.zip")
+
+# ---------------------------------------------------------
+# زبانه چهارم: تبدیل فرمت (بخش جدید)
+# ---------------------------------------------------------
+with tab4:
+    st.header("تبدیل فرمت تصاویر")
+    conv_files = st.file_uploader("عکس‌ها را انتخاب کنید:", type=['jpg', 'jpeg', 'png', 'webp', 'bmp'], accept_multiple_files=True, key="fl4")
+    
+    target_ext = st.selectbox("فرمت مقصد را انتخاب کنید:", ["JPG", "PNG", "WEBP"], key="sel4")
+    
+    if conv_files and st.button("تبدیل فرمت همگانی", key="btn4"):
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED) as zf:
+            for f in conv_files:
+                img = Image.open(f)
+                
+                # تنظیمات خاص برای هر فرمت
+                save_format = "JPEG" if target_ext == "JPG" else target_ext
+                
+                # تبدیل به حالت رنگی مناسب (JPG شفافیت ندارد و باید RGB شود)
+                if target_ext in ["JPG", "WEBP"]:
+                    img = img.convert("RGB")
+                else:
+                    img = img.convert("RGBA")
+                
+                buf = io.BytesIO()
+                img.save(buf, format=save_format, quality=90 if target_ext != "PNG" else None)
+                
+                # نام فایل جدید
+                new_name = f"{f.name.split('.')[0]}.{target_ext.lower()}"
+                zf.writestr(new_name, buf.getvalue())
+                
+        st.success(f"تمامی عکس‌ها به فرمت {target_ext} تبدیل شدند.")
+        st.download_button(f"📥 دانلود عکس‌های {target_ext} (ZIP)", zip_buffer.getvalue(), "converted_images.zip")
