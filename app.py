@@ -33,7 +33,7 @@ with tabs[4]:
             st.image(img_seo, width=300)
             
             with st.spinner("جمنای در حال بررسی تصویر است..."):
-                model = genai.GenerativeModel('gemini-1.5-flash-latest')
+                model = genai.GenerativeModel('models/gemini-1.5-flash')
                 prompt = f"تحلیل سئو برای این تصویر با تمرکز بر: {user_desc}. 1. متن Alt کوتاه 2. کپشن 3. هشتگ‌ها"
                 response = model.generate_content([prompt, img_seo])
                 
