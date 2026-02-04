@@ -85,7 +85,7 @@ with tabs[0]:
         up_l = st.file_uploader("لوگو طلایی:", type=['png','jpg'], key="u2")
         if up_m and up_l:
             op = st.slider("شفافیت:", 0, 100, 95); sz = st.slider("اندازه لوگو:", 5, 50, 20)
-            pos = st.radio("مکان:", [,"بالا-راست","بالا-چپ","راست-پایین", "وسط", "چپ-پایین"], horizontal=True)
+            pos = st.radio("مکان:", ["راست-بالا", "چپ-بالا", "راست-پایین", "چپ-پایین", "وسط"], horizontal=True)
     with c2:
         if up_m and up_l:
             st.image(apply_logo(Image.open(up_m[0]), Image.open(up_l), sz, op, pos), use_container_width=True)
@@ -173,10 +173,4 @@ with tabs[4]:
         if up_t:
             st.image(apply_text(Image.open(up_t[0]), txt, t_sz, t_color, t_pos, f_file), use_container_width=True)
             if st.button("🚀 اعمال متن روی همه"):
-                z_buf = io.BytesIO()
-                with zipfile.ZipFile(z_buf, "a", zipfile.ZIP_DEFLATED) as zf:
-                    for f in up_t:
-                        res = apply_text(Image.open(f), txt, t_sz, t_color, t_pos, f_file)
-                        buf = io.BytesIO(); res.save(buf, format="JPEG", quality=90)
-                        zf.writestr(f"text_{f.name}", buf.getvalue())
-                st.download_button("📥 دریافت ZIP", z_buf.getvalue(), "deco_text.zip")
+                z
