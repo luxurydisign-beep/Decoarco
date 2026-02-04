@@ -85,7 +85,7 @@ with tabs[0]:
         up_l = st.file_uploader("لوگو طلایی:", type=['png','jpg'], key="u2")
         if up_m and up_l:
             op = st.slider("شفافیت:", 0, 100, 95); sz = st.slider("اندازه لوگو:", 5, 50, 20)
-            pos = st.radio("مکان:", [,"بالا-راست", "بالا-چپ" ,"راست-پایین", "وسط", "چپ-پایین"], horizontal=True)
+            pos = st.radio("مکان:", [,"بالا-راست","بالا-چپ","راست-پایین", "وسط", "چپ-پایین"], horizontal=True)
     with c2:
         if up_m and up_l:
             st.image(apply_logo(Image.open(up_m[0]), Image.open(up_l), sz, op, pos), use_container_width=True)
